@@ -2,7 +2,7 @@
    NYC Airbnb Room Type Predictor — front-end logic
    ========================================================== */
 
-const API_BASE = "http://127.0.0.1:8001";
+const API_BASE = "https://nyc-airbnb-roomtype-pred-1imn.onrender.com";
 const PREDICT_URL = `${API_BASE}/predict`;
 const HEALTH_URL = `${API_BASE}/health`;
 
