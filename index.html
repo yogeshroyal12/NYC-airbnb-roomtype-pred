@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NYC Airbnb Room Type Predictor</title>
+  <meta name="description" content="Predict the room type of a New York City Airbnb listing using a machine learning model." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <span>NYC Stays ML</span>
+    </div>
+    <span class="status" id="api-status">
+      <span class="status-dot"></span>
+      <span class="status-text">Checking API…</span>
+    </span>
+  </header>
+
+  <main class="container">
+    <section class="hero">
+      <p class="eyebrow">Machine Learning · Random Forest</p>
+      <h1>Predict the room type<br /><span class="gradient-text">of an Airbnb listing</span></h1>
+      <p class="lead">
+        Enter listing details from New York City and the model estimates whether it is an
+        entire home, a private room, or a shared room, along with its confidence.
+      </p>
+    </section>
+
+    <section class="card" aria-labelledby="form-title">
+      <div class="card-header">
+        <h2 id="form-title">Listing details</h2>
+        <button type="button" class="btn btn-ghost" id="reset-btn">Reset</button>
+      </div>
+
+      <form id="predict-form" novalidate>
+        <fieldset class="grid">
+          <legend class="sr-only">Location</legend>
+
+          <div class="field">
+            <label for="neighbourhood_group">Borough</label>
+            <select id="neighbourhood_group" name="neighbourhood_group" required>
+              <option value="">Select a borough</option>
+              <option value="Manhattan" selected>Manhattan</option>
+              <option value="Brooklyn">Brooklyn</option>
+              <option value="Queens">Queens</option>
+              <option value="Bronx">Bronx</option>
+              <option value="Staten Island">Staten Island</option>
+            </select>
+            <small class="error" data-for="neighbourhood_group"></small>
+          </div>
+
+          <div class="field">
+            <label for="neighbourhood">Neighbourhood</label>
+            <input id="neighbourhood" name="neighbourhood" type="text" placeholder="e.g. Midtown" value="Midtown" required />
+            <small class="error" data-for="neighbourhood"></small>
+          </div>
+
+          <div class="field">
+            <label for="latitude">Latitude</label>
+            <input id="latitude" name="latitude" type="number" step="any" min="-90" max="90" value="40.75362" required />
+            <small class="error" data-for="latitude"></small>
+          </div>
+
+          <div class="field">
+            <label for="longitude">Longitude</label>
+            <input id="longitude" name="longitude" type="number" step="any" min="-180" max="180" value="-73.98377" required />
+            <small class="error" data-for="longitude"></small>
+          </div>
+        </fieldset>
+
+        <fieldset class="grid">
+          <legend class="sr-only">Pricing and availability</legend>
+
+          <div class="field">
+            <label for="price">Price per night (USD)</label>
+            <input id="price" name="price" type="number" step="1" min="1" value="150" required />
+            <small class="error" data-for="price"></small>
+          </div>
+
+          <div class="field">
+            <label for="minimum_nights">Minimum nights</label>
+            <input id="minimum_nights" name="minimum_nights" type="number" step="1" min="1" max="365" value="2" required />
+            <small class="error" data-for="minimum_nights"></small>
+          </div>
+
+          <div class="field">
+            <label for="availability_365">Availability (days / year)</label>
+            <input id="availability_365" name="availability_365" type="number" step="1" min="0" max="365" value="200" required />
+            <small class="error" data-for="availability_365"></small>
+          </div>
+
+          <div class="field">
+            <label for="calculated_host_listings_count">Host listings count</label>
+            <input id="calculated_host_listings_count" name="calculated_host_listings_count" type="number" step="1" min="0" value="1" required />
+            <small class="error" data-for="calculated_host_listings_count"></small>
+          </div>
+        </fieldset>
+
+        <fieldset class="grid">
+          <legend class="sr-only">Reviews</legend>
+
+          <div class="field">
+            <label for="number_of_reviews">Total reviews</label>
+            <input id="number_of_reviews" name="number_of_reviews" type="number" step="1" min="0" value="20" required />
+            <small class="error" data-for="number_of_reviews"></small>
+          </div>
+
+          <div class="field">
+            <label for="reviews_per_month">Reviews per month</label>
+            <input id="reviews_per_month" name="reviews_per_month" type="number" step="0.01" min="0" value="1.2" required />
+            <small class="error" data-for="reviews_per_month"></small>
+          </div>
+        </fieldset>
+
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" id="submit-btn">
+            <span class="btn-label">Predict room type</span>
+            <span class="spinner" aria-hidden="true"></span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card result-card hidden" id="result" aria-live="polite">
+      <div class="result-head">
+        <span class="result-tag">Prediction</span>
+        <h2 id="result-type">—</h2>
+      </div>
+      <div class="confidence">
+        <div class="confidence-row">
+          <span>Model confidence</span>
+          <strong id="result-prob">0%</strong>
+        </div>
+        <div class="bar"><div class="bar-fill" id="result-bar"></div></div>
+      </div>
+      <p class="result-note" id="result-note"></p>
+    </section>
+
+    <section class="card error-card hidden" id="error-box" role="alert">
+      <h3>Something went wrong</h3>
+      <p id="error-text"></p>
+    </section>
+
+    <footer class="footer">
+      <p>Built with FastAPI, scikit-learn and vanilla JavaScript.</p>
+    </footer>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
